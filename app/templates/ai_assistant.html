@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}AI Assistant{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">AI Assistant</h1>
+        <p class="page-subtitle">Powered by intelligent automation</p>
+    </div>
+</div>
+
+<div class="ai-dashboard">
+    <div class="card ai-insights-card">
+        <div class="card-header">
+            <h3><i class="fas fa-lightbulb"></i> Dashboard Insights</h3>
+            <button class="btn btn-glass btn-sm" onclick="refreshInsights()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+        <div class="card-body" id="insightsContainer">
+            <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading insights...</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-chart-line"></i> Sales Summary</h3>
+            <button class="btn btn-glass btn-sm" onclick="refreshSalesSummary()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+        <div class="card-body" id="salesSummaryContainer">
+            <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading summary...</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-wave-square"></i> Trend Analysis</h3>
+            <button class="btn btn-glass btn-sm" onclick="refreshTrends()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+        <div class="card-body" id="trendsContainer">
+            <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading analysis...</div>
+        </div>
+    </div>
+
+    <div class="card chatbot-card">
+        <div class="card-header">
+            <h3><i class="fas fa-comment-dots"></i> AI Chatbot</h3>
+        </div>
+        <div class="card-body">
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-message bot">
+                    <div class="chat-avatar"><i class="fas fa-robot"></i></div>
+                    <div class="chat-bubble">
+                        Hello! I'm your AI dashboard assistant. Ask me about revenue, users, products, or trends!
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-wrap">
+                <input type="text" id="chatInput" placeholder="Ask me anything..." autocomplete="off">
+                <button id="chatSend" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function refreshInsights() {
+    const container = document.getElementById('insightsContainer');
+    container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading insights...</div>';
+    fetch('/ai/insights')
+        .then(r => r.json())
+        .then(data => {
+            container.innerHTML = data.insights.map(i =>
+                '<div class="insight-item"><i class="fas fa-lightbulb"></i><span>' + i + '</span></div>'
+            ).join('') || '<div class="empty-state">No insights available</div>';
+        });
+}
+
+function refreshSalesSummary() {
+    const container = document.getElementById('salesSummaryContainer');
+    container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading summary...</div>';
+    fetch('/ai/sales-summary')
+        .then(r => r.json())
+        .then(data => {
+            container.innerHTML = '<div class="ai-text-block"><i class="fas fa-robot"></i> ' + data.summary + '</div>';
+        });
+}
+
+function refreshTrends() {
+    const container = document.getElementById('trendsContainer');
+    container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading analysis...</div>';
+    fetch('/ai/trends')
+        .then(r => r.json())
+        .then(data => {
+            container.innerHTML = '<div class="ai-text-block"><i class="fas fa-chart-line"></i> ' + data.analysis + '</div>';
+        });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    refreshInsights();
+    refreshSalesSummary();
+    refreshTrends();
+});
+
+document.getElementById('chatSend')?.addEventListener('click', sendMessage);
+document.getElementById('chatInput')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') sendMessage();
+});
+
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    const messages = document.getElementById('chatMessages');
+    messages.innerHTML += '<div class="chat-message user"><div class="chat-bubble user-bubble">' + escapeHtml(msg) + '</div></div>';
+    input.value = '';
+    messages.scrollTop = messages.scrollHeight;
+
+    fetch('/ai/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
+        body: JSON.stringify({message: msg})
+    })
+    .then(r => r.json())
+    .then(data => {
+        messages.innerHTML += '<div class="chat-message bot"><div class="chat-avatar"><i class="fas fa-robot"></i></div><div class="chat-bubble">' + escapeHtml(data.response) + '</div></div>';
+        messages.scrollTop = messages.scrollHeight;
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{% if user %}Edit User{% else %}Add User{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{% if user %}Edit User{% else %}Add User{% endif %}</h1>
+        <p class="page-subtitle">{% if user %}Update user information{% else %}Create a new user account{% endif %}</p>
+    </div>
+</div>
+
+<div class="card form-card">
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data" class="form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" value="{{ user.username if user else '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" value="{{ user.email if user else '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Password {% if user %}(leave blank to keep){% endif %}</label>
+                    <input type="password" name="password" {% if not user %}required{% endif %}>
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select name="role">
+                        <option value="user" {% if user and user.role == 'user' %}selected{% endif %}>User</option>
+                        <option value="moderator" {% if user and user.role == 'moderator' %}selected{% endif %}>Moderator</option>
+                        <option value="admin" {% if user and user.role == 'admin' %}selected{% endif %}>Admin</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status">
+                        <option value="active" {% if user and user.status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="inactive" {% if user and user.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                        <option value="suspended" {% if user and user.status == 'suspended' %}selected{% endif %}>Suspended</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Profile Image</label>
+                    <input type="file" name="profile_image" accept="image/*">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Bio</label>
+                <textarea name="bio" rows="3">{{ user.bio if user else '' }}</textarea>
+            </div>
+            <div class="form-actions">
+                <a href="{{ url_for('users.list_users') }}" class="btn btn-glass">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> {% if user %}Update{% else %}Create{% endif %} User
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

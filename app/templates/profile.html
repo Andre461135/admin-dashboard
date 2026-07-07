@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Profile</h1>
+        <p class="page-subtitle">Manage your public profile</p>
+    </div>
+</div>
+
+<div class="profile-grid">
+    <div class="card profile-card">
+        <div class="card-body profile-card-body">
+            <div class="profile-avatar-section">
+                <img src="{{ url_for('static', filename='images/' + current_user.profile_image) }}" alt="Avatar" class="profile-avatar" id="profileAvatar">
+                <h2>{{ current_user.username }}</h2>
+                <span class="badge badge-{{ current_user.role }}">{{ current_user.role }}</span>
+            </div>
+            <div class="profile-stats">
+                <div class="profile-stat">
+                    <span class="stat-value">{{ current_user.created_at.strftime('%d %b %Y') }}</span>
+                    <span class="stat-label">Member Since</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="stat-value">{{ current_user.email }}</span>
+                    <span class="stat-label">Email</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-edit"></i> Edit Profile</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data" class="form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                    <label>Profile Image</label>
+                    <input type="file" name="profile_image" accept="image/*" id="profileImageInput">
+                </div>
+                <div class="form-group">
+                    <label>Bio</label>
+                    <textarea name="bio" rows="4" placeholder="Tell us about yourself...">{{ current_user.bio }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('profileImageInput')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('profileAvatar').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Products{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Products</h1>
+        <p class="page-subtitle">Manage your product catalog ({{ total }} items)</p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('products.add_product') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Product
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="GET" class="filters-bar">
+            <div class="search-input-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text" name="search" placeholder="Search products..." value="{{ search }}">
+            </div>
+            <select name="category" class="filter-select">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-glass">Filter</button>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td class="product-cell">
+                            <img src="{{ url_for('static', filename='images/' + product.image) }}" alt="" class="table-product-img">
+                            <div>
+                                <span class="product-name">{{ product.name }}</span>
+                                <span class="product-desc">{{ product.description[:50] }}{% if product.description|length > 50 %}...{% endif %}</span>
+                            </div>
+                        </td>
+                        <td><span class="badge badge-category">{{ product.category }}</span></td>
+                        <td class="amount-cell">${{ "%.2f"|format(product.price) }}</td>
+                        <td>
+                            <div class="stock-indicator">
+                                <span class="stock-bar" style="width: {{ (product.stock / 200) * 100 }}%"></span>
+                                <span>{{ product.stock }}</span>
+                            </div>
+                        </td>
+                        <td><span class="status-dot {{ product.status }}"></span> {{ product.status }}</td>
+                        <td class="actions-cell">
+                            <a href="{{ url_for('products.edit_product', product_id=product.id) }}" class="btn-icon" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form method="POST" action="{{ url_for('products.delete_product', product_id=product.id) }}" class="inline-form" onsubmit="return confirm('Delete this product?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn-icon btn-icon-danger" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not products %}
+                    <tr><td colspan="6" class="empty-state">No products found</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            <a href="{{ url_for('products.list_products', page=1, search=search, category=category_filter) }}" class="page-link">&laquo;</a>
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                <span class="page-link active">{{ p }}</span>
+                {% elif p <= page + 2 and p >= page - 2 %}
+                <a href="{{ url_for('products.list_products', page=p, search=search, category=category_filter) }}" class="page-link">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+            <a href="{{ url_for('products.list_products', page=total_pages, search=search, category=category_filter) }}" class="page-link">&raquo;</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

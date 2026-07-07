@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Users</h1>
+        <p class="page-subtitle">Manage your users ({{ total }} total)</p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('users.add_user') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add User
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="GET" class="filters-bar">
+            <div class="search-input-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text" name="search" placeholder="Search users..." value="{{ search }}">
+            </div>
+            <select name="role" class="filter-select">
+                <option value="">All Roles</option>
+                <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admin</option>
+                <option value="moderator" {% if role_filter == 'moderator' %}selected{% endif %}>Moderator</option>
+                <option value="user" {% if role_filter == 'user' %}selected{% endif %}>User</option>
+            </select>
+            <select name="status" class="filter-select">
+                <option value="">All Status</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspended</option>
+            </select>
+            <button type="submit" class="btn btn-glass">Filter</button>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td class="user-cell">
+                            <img src="{{ url_for('static', filename='images/' + user.profile_image) }}" alt="" class="table-avatar">
+                            <div>
+                                <span class="user-name">{{ user.username }}</span>
+                            </div>
+                        </td>
+                        <td>{{ user.email }}</td>
+                        <td><span class="badge badge-{{ user.role }}">{{ user.role }}</span></td>
+                        <td><span class="status-dot {{ user.status }}"></span> {{ user.status }}</td>
+                        <td>{{ user.created_at.strftime('%d %b %Y') }}</td>
+                        <td class="actions-cell">
+                            <a href="{{ url_for('users.edit_user', user_id=user.id) }}" class="btn-icon" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form method="POST" action="{{ url_for('users.delete_user', user_id=user.id) }}" class="inline-form" onsubmit="return confirm('Delete this user?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn-icon btn-icon-danger" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not users %}
+                    <tr><td colspan="6" class="empty-state">No users found</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            <a href="{{ url_for('users.list_users', page=1, search=search, role=role_filter, status=status_filter) }}" class="page-link">&laquo;</a>
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                <span class="page-link active">{{ p }}</span>
+                {% elif p <= page + 2 and p >= page - 2 %}
+                <a href="{{ url_for('users.list_users', page=p, search=search, role=role_filter, status=status_filter) }}" class="page-link">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+            <a href="{{ url_for('users.list_users', page=total_pages, search=search, role=role_filter, status=status_filter) }}" class="page-link">&raquo;</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

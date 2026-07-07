@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Welcome back, {{ current_user.username }}. Here's your overview.</p>
+    </div>
+    <div class="page-actions">
+        <button class="btn btn-glass" onclick="location.href='{{ url_for('ai.assistant') }}'">
+            <i class="fas fa-robot"></i> AI Insights
+        </button>
+        <button class="btn btn-glass" onclick="refreshDashboard()">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<div class="insights-bar" id="insightsBar">
+    {% if insights %}
+        {% for insight in insights %}
+        <div class="insight-chip">
+            <i class="fas fa-lightbulb"></i>
+            <span>{{ insight }}</span>
+        </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card" data-delay="0">
+        <div class="stat-icon stat-icon-revenue">
+            <i class="fas fa-dollar-sign"></i>
+        </div>
+        <div class="stat-info">
+            <h3>${{ "%.2f"|format(total_revenue) }}</h3>
+            <p>Total Revenue</p>
+        </div>
+        <div class="stat-change positive">
+            <i class="fas fa-arrow-up"></i> 12.5%
+        </div>
+    </div>
+    <div class="stat-card" data-delay="100">
+        <div class="stat-icon stat-icon-users">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ user_count }}</h3>
+            <p>Total Users</p>
+        </div>
+        <div class="stat-change positive">
+            <i class="fas fa-arrow-up"></i> {{ active_users }} active
+        </div>
+    </div>
+    <div class="stat-card" data-delay="200">
+        <div class="stat-icon stat-icon-products">
+            <i class="fas fa-box"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ product_count }}</h3>
+            <p>Products</p>
+        </div>
+        <div class="stat-change {% if low_stock > 0 %}negative{% else %}positive{% endif %}">
+            <i class="fas fa-{% if low_stock > 0 %}exclamation-triangle{% else %}check{% endif %}"></i>
+            {{ low_stock }} low stock
+        </div>
+    </div>
+    <div class="stat-card" data-delay="300">
+        <div class="stat-icon stat-icon-orders">
+            <i class="fas fa-shopping-cart"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ transaction_count }}</h3>
+            <p>Transactions</p>
+        </div>
+        <div class="stat-change {% if pending_orders > 0 %}warning{% else %}positive{% endif %}">
+            <i class="fas fa-clock"></i> {{ pending_orders }} pending
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="card chart-card">
+        <div class="card-header">
+            <h3><i class="fas fa-chart-line"></i> Revenue Overview</h3>
+            <span class="badge badge-primary">Last 7 days</span>
+        </div>
+        <div class="card-body">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card activity-card">
+        <div class="card-header">
+            <h3><i class="fas fa-bolt"></i> Recent Activity</h3>
+            <a href="#" class="card-link">View All</a>
+        </div>
+        <div class="card-body">
+            <div class="activity-feed">
+                {% for activity in recent_activities %}
+                <div class="activity-item">
+                    <div class="activity-dot"></div>
+                    <div class="activity-content">
+                        <p class="activity-action">{{ activity.action }}</p>
+                        <p class="activity-details">{{ activity.details }}</p>
+                        <span class="activity-time">{{ activity.created_at.strftime('%H:%M %d %b') }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-grid two-col">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-user-plus"></i> Recent Users</h3>
+            <a href="{{ url_for('users.list_users') }}" class="card-link">View All</a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in recent_users %}
+                        <tr>
+                            <td class="user-cell">
+                                <img src="{{ url_for('static', filename='images/' + user.profile_image) }}" alt="" class="table-avatar">
+                                {{ user.username }}
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td><span class="badge badge-{{ user.role }}">{{ user.role }}</span></td>
+                            <td><span class="status-dot {{ user.status }}"></span> {{ user.status }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-credit-card"></i> Recent Transactions</h3>
+            <span class="badge badge-primary">{{ transaction_count }} total</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in recent_transactions %}
+                        <tr>
+                            <td>#{{ t.id }}</td>
+                            <td class="amount-cell">${{ "%.2f"|format(t.amount) }}</td>
+                            <td><span class="status-badge {{ t.status }}">{{ t.status }}</span></td>
+                            <td class="date-cell">{{ t.created_at.strftime('%d %b %Y') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-tasks"></i> Quick Tasks</h3>
+    </div>
+    <div class="card-body">
+        <div class="tasks-grid">
+            <a href="{{ url_for('users.add_user') }}" class="task-card">
+                <i class="fas fa-user-plus"></i>
+                <span>Add User</span>
+            </a>
+            <a href="{{ url_for('products.add_product') }}" class="task-card">
+                <i class="fas fa-plus-circle"></i>
+                <span>Add Product</span>
+            </a>
+            <a href="{{ url_for('reports.reports') }}" class="task-card">
+                <i class="fas fa-file-export"></i>
+                <span>Export Report</span>
+            </a>
+            <a href="{{ url_for('ai.assistant') }}" class="task-card">
+                <i class="fas fa-robot"></i>
+                <span>AI Assistant</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    const data = {{ revenue_data|tojson }};
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.labels,
+            datasets: [{
+                label: 'Revenue ($)',
+                data: data.values,
+                borderColor: '#6c5ce7',
+                backgroundColor: 'rgba(108, 92, 231, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#6c5ce7',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: '#a0aec0', font: { family: 'Inter' } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#a0aec0', font: { family: 'Inter' } }
+                }
+            }
+        }
+    });
+})();
+</script>
+{% endblock %}

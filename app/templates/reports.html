@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Reports</h1>
+        <p class="page-subtitle">Generate and export reports</p>
+    </div>
+</div>
+
+<div class="reports-grid">
+    <div class="card report-card" data-report="users">
+        <div class="report-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <h3>Users Report</h3>
+        <p>Export complete user list with roles and status</p>
+        <div class="report-actions">
+            <button class="btn btn-glass view-report" data-type="users">
+                <i class="fas fa-eye"></i> View
+            </button>
+            <a href="{{ url_for('reports.export_csv', type='users') }}" class="btn btn-glass">
+                <i class="fas fa-file-csv"></i> CSV
+            </a>
+            <a href="{{ url_for('reports.export_pdf', type='users') }}" class="btn btn-glass">
+                <i class="fas fa-file-pdf"></i> PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="card report-card" data-report="sales">
+        <div class="report-icon">
+            <i class="fas fa-shopping-cart"></i>
+        </div>
+        <h3>Sales Report</h3>
+        <p>All transactions with amounts and status</p>
+        <div class="report-actions">
+            <button class="btn btn-glass view-report" data-type="sales">
+                <i class="fas fa-eye"></i> View
+            </button>
+            <a href="{{ url_for('reports.export_csv', type='sales') }}" class="btn btn-glass">
+                <i class="fas fa-file-csv"></i> CSV
+            </a>
+            <a href="{{ url_for('reports.export_pdf', type='sales') }}" class="btn btn-glass">
+                <i class="fas fa-file-pdf"></i> PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="card report-card" data-report="products">
+        <div class="report-icon">
+            <i class="fas fa-box"></i>
+        </div>
+        <h3>Products Report</h3>
+        <p>Complete product catalog with inventory</p>
+        <div class="report-actions">
+            <button class="btn btn-glass view-report" data-type="products">
+                <i class="fas fa-eye"></i> View
+            </button>
+            <a href="{{ url_for('reports.export_csv', type='products') }}" class="btn btn-glass">
+                <i class="fas fa-file-csv"></i> CSV
+            </a>
+            <a href="{{ url_for('reports.export_pdf', type='products') }}" class="btn btn-glass">
+                <i class="fas fa-file-pdf"></i> PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="card report-card" data-report="revenue">
+        <div class="report-icon">
+            <i class="fas fa-dollar-sign"></i>
+        </div>
+        <h3>Revenue Report</h3>
+        <p>Revenue breakdown with totals</p>
+        <div class="report-actions">
+            <button class="btn btn-glass view-report" data-type="revenue">
+                <i class="fas fa-eye"></i> View
+            </button>
+            <a href="{{ url_for('reports.export_csv', type='revenue') }}" class="btn btn-glass">
+                <i class="fas fa-file-csv"></i> CSV
+            </a>
+            <a href="{{ url_for('reports.export_pdf', type='revenue') }}" class="btn btn-glass">
+                <i class="fas fa-file-pdf"></i> PDF
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card" id="reportPreview" style="display:none;">
+    <div class="card-header">
+        <h3 id="reportTitle">Report Preview</h3>
+        <button class="btn btn-glass" onclick="document.getElementById('reportPreview').style.display='none'">
+            <i class="fas fa-times"></i> Close
+        </button>
+    </div>
+    <div class="card-body">
+        <div id="reportSummary" class="report-summary"></div>
+        <div class="table-responsive">
+            <table class="table" id="reportTable">
+                <thead id="reportTableHead"></thead>
+                <tbody id="reportTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.view-report').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const type = this.dataset.type;
+        const preview = document.getElementById('reportPreview');
+        const title = document.getElementById('reportTitle');
+        const summary = document.getElementById('reportSummary');
+        const thead = document.getElementById('reportTableHead');
+        const tbody = document.getElementById('reportTableBody');
+
+        title.textContent = type.charAt(0).toUpperCase() + type.slice(1) + ' Report';
+        summary.innerHTML = '<div class="loading-spinner-sm"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+        preview.style.display = 'block';
+
+        fetch('/reports/data?type=' + type)
+            .then(r => r.json())
+            .then(data => {
+                summary.innerHTML = '<i class="fas fa-robot"></i> ' + data.summary;
+                if (data.data && data.data.length > 0) {
+                    const headers = Object.keys(data.data[0]);
+                    thead.innerHTML = '<tr>' + headers.map(h => '<th>' + h.replace('_', ' ') + '</th>').join('') + '</tr>';
+                    tbody.innerHTML = data.data.map(row =>
+                        '<tr>' + headers.map(h => '<td>' + (row[h] ?? '') + '</td>').join('') + '</tr>'
+                    ).join('');
+                    if (data.total !== undefined) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = '<td colspan="' + headers.length + '" class="total-row">Total: $' + data.total.toFixed(2) + '</td>';
+                        tbody.appendChild(row);
+                    }
+                } else {
+                    thead.innerHTML = '';
+                    tbody.innerHTML = '<tr><td class="empty-state">No data available</td></tr>';
+                }
+            });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ current_user.theme if current_user.is_authenticated else 'dark' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Dashboard{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <div class="dashboard-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-cube logo-icon"></i>
+                    <span class="logo-text">AdminPro</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <span class="nav-label">Main</span>
+                    <a href="{{ url_for('dashboard.index') }}" class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="{{ url_for('ai.assistant') }}" class="nav-item {% if request.endpoint == 'ai.assistant' %}active{% endif %}">
+                        <i class="fas fa-robot"></i>
+                        <span>AI Assistant</span>
+                    </a>
+                </div>
+                <div class="nav-section">
+                    <span class="nav-label">Management</span>
+                    <a href="{{ url_for('users.list_users') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('users.') %}active{% endif %}">
+                        <i class="fas fa-users"></i>
+                        <span>Users</span>
+                    </a>
+                    <a href="{{ url_for('products.list_products') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('products.') %}active{% endif %}">
+                        <i class="fas fa-box"></i>
+                        <span>Products</span>
+                    </a>
+                    <a href="{{ url_for('reports.reports') }}" class="nav-item {% if request.endpoint == 'reports.reports' %}active{% endif %}">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Reports</span>
+                    </a>
+                </div>
+                <div class="nav-section">
+                    <span class="nav-label">Account</span>
+                    <a href="{{ url_for('settings.profile') }}" class="nav-item {% if request.endpoint == 'settings.profile' %}active{% endif %}">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a href="{{ url_for('settings.settings') }}" class="nav-item {% if request.endpoint == 'settings.settings' %}active{% endif %}">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}" class="nav-item">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info-mini">
+                    <img src="{{ url_for('static', filename='images/' + current_user.profile_image) }}" alt="Avatar" class="user-avatar-mini" onerror="this.src='{{ url_for('static', filename='images/default.svg') }}'">
+                    <div class="user-info-text">
+                        <span class="user-name">{{ current_user.username }}</span>
+                        <span class="user-role">{{ current_user.role }}</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content" id="mainContent">
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="smartSearch" placeholder="Smart search..." autocomplete="off">
+                        <div class="search-results" id="searchResults"></div>
+                    </div>
+                </div>
+                <div class="top-bar-right">
+                    <button class="theme-toggle" id="themeToggle">
+                        <i class="fas fa-moon"></i>
+                        <i class="fas fa-sun"></i>
+                    </button>
+                    <div class="notifications-dropdown">
+                        <button class="notif-btn" id="notifBtn">
+                            <i class="fas fa-bell"></i>
+                            <span class="notif-badge" id="notifBadge">{{ notifications|length if notifications else 0 }}</span>
+                        </button>
+                        <div class="notif-menu" id="notifMenu">
+                            <div class="notif-header">
+                                <h4>Notifications</h4>
+                            </div>
+                            <div class="notif-list">
+                                {% if notifications %}
+                                    {% for n in notifications %}
+                                    <div class="notif-item notif-{{ n.type }}">
+                                        <div class="notif-icon">
+                                            <i class="fas fa-{% if n.type == 'success' %}check-circle{% elif n.type == 'warning' %}exclamation-triangle{% elif n.type == 'danger' %}times-circle{% else %}info-circle{% endif %}"></i>
+                                        </div>
+                                        <div class="notif-content">
+                                            <p class="notif-title">{{ n.title }}</p>
+                                            <p class="notif-text">{{ n.message }}</p>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="notif-empty">No notifications</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('settings.profile') }}" class="user-profile-top">
+                        <img src="{{ url_for('static', filename='images/' + current_user.profile_image) }}" alt="Avatar" onerror="this.src='{{ url_for('static', filename='images/default.svg') }}'">
+                    </a>
+                </div>
+            </header>
+
+            <div class="content-area">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <span>{{ message }}</span>
+                            <button class="alert-close">&times;</button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    {% else %}
+        {% block auth_content %}{% endblock %}
+    {% endif %}
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader">
+            <div class="loader-spinner"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='javascript/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
