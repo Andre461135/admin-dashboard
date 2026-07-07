@@ -1,21 +1,24 @@
-# AdminPro - AI-Powered Admin Dashboard
+# AI-Python-Admin-Dashboard
 
-A premium, production-ready, AI-powered admin dashboard built with **Python, Flask, and Vanilla JavaScript**. Features a modern glassmorphism UI with dark/light mode, comprehensive management tools, and built-in AI-powered insights.
+A premium, production-ready **AI-powered Admin Dashboard** built with **Python, Flask, and Vanilla JavaScript**. Features a modern glassmorphism UI with dark/light mode, comprehensive management tools, and built-in AI-powered insights.
 
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
 ![Flask](https://img.shields.io/badge/Flask-3.0-black)
 ![License](https://img.shields.io/badge/License-MIT-green)
+![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-success)
+
+**Live Demo (Static UI):** [https://sers457.github.io/AI-Python-Admin-Dashboard/](https://sers457.github.io/AI-Python-Admin-Dashboard/)
 
 ---
 
 ## Features
 
 ### Authentication
-- Secure login with password hashing
+- Secure login with password hashing (Werkzeug)
 - Session management with Flask-Login
 - Remember me functionality
 - Forgot password flow
-- CSRF protection
+- CSRF protection (Flask-WTF)
 
 ### Dashboard
 - Revenue analytics with interactive charts (Chart.js)
@@ -26,11 +29,11 @@ A premium, production-ready, AI-powered admin dashboard built with **Python, Fla
 - Quick action tasks
 
 ### User Management
-- Full CRUD operations
+- Full CRUD operations (Create, Read, Update, Delete)
 - Search, filter, and pagination
 - Role management (admin, moderator, user)
 - Status management (active, inactive, suspended)
-- Profile image upload
+- Profile image upload with validation
 
 ### Product Management
 - Full CRUD operations
@@ -40,7 +43,8 @@ A premium, production-ready, AI-powered admin dashboard built with **Python, Fla
 
 ### Reports
 - Users, Sales, Products, Revenue reports
-- CSV export
+- **CSV export** - Download report data as CSV files
+- **PDF export** - Download styled PDF reports via ReportLab
 - AI-generated report summaries
 - Interactive report preview
 
@@ -48,17 +52,21 @@ A premium, production-ready, AI-powered admin dashboard built with **Python, Fla
 - Dashboard insights generation
 - Sales trend summaries
 - Smart search across users, products, transactions
-- Trend analysis
-- Interactive chatbot
-- Designed for easy OpenAI/LLM API integration
+- Trend analysis (30-day patterns)
+- Interactive rule-based chatbot
+- **Designed for easy OpenAI/LLM API integration** — replace `_call_llm()` in `ai_helpers.py`
 
 ### Security
-- Password hashing (Werkzeug)
-- CSRF protection (Flask-WTF)
-- SQL injection protection (SQLAlchemy)
-- XSS protection (Jinja2 auto-escaping)
-- Secure file uploads with validation
-- Proper error handling
+| Feature | Implementation |
+|---------|---------------|
+| Password hashing | Werkzeug `generate_password_hash` |
+| CSRF protection | Flask-WTF |
+| SQL injection | SQLAlchemy ORM (parameterized queries) |
+| XSS protection | Jinja2 auto-escaping |
+| Secure sessions | Flask-Login with signed cookies |
+| Input validation | Server-side sanitization |
+| File uploads | Extension whitelist + UUID rename |
+| Error handling | Try/except wrappers + flash messages |
 
 ---
 
@@ -68,78 +76,128 @@ A premium, production-ready, AI-powered admin dashboard built with **Python, Fla
 |-----------|---------|
 | Python 3.8+ | Core programming language |
 | Flask 3.0 | Web framework |
-| SQLite | Database |
-| SQLAlchemy | ORM |
+| SQLite | Database (auto-created, auto-seeded) |
+| SQLAlchemy 2.0 | ORM |
 | Flask-Login | Session management |
 | Flask-WTF | CSRF protection |
 | HTML5 + CSS3 | Structure and styling |
-| Vanilla JS | Frontend interactivity |
+| Vanilla JavaScript | Frontend interactivity |
 | Chart.js | Data visualization |
+| ReportLab | PDF generation |
 
 ---
 
 ## Project Structure
 
 ```
-admin-dashboard/
+AI-Python-Admin-Dashboard/
 ├── app/
-│   ├── __init__.py          # App factory
+│   ├── __init__.py              # Flask app factory
 │   ├── database/
-│   │   └── schema.py        # DB initialization & seeding
+│   │   └── schema.py            # DB init & 13-user/12-product seed
 │   ├── models/
-│   │   └── models.py        # SQLAlchemy models
+│   │   └── models.py            # User, Product, Activity, Notification, Transaction, Report
 │   ├── routes/
-│   │   ├── auth.py          # Authentication routes
-│   │   ├── dashboard.py     # Dashboard routes
-│   │   ├── users.py         # User management routes
-│   │   ├── products.py      # Product management routes
-│   │   ├── reports.py       # Reports & export routes
-│   │   ├── settings.py      # Settings & profile routes
-│   │   └── ai.py            # AI feature routes
+│   │   ├── auth.py              # Login, logout, forgot password
+│   │   ├── dashboard.py         # Overview, charts, stats, insights
+│   │   ├── users.py             # CRUD, search, pagination, roles
+│   │   ├── products.py          # CRUD, categories, inventory
+│   │   ├── reports.py           # View, CSV export, PDF export
+│   │   ├── settings.py          # Password, theme, profile, notifications
+│   │   └── ai.py                # AI insights, chatbot, search, trends
 │   ├── static/
-│   │   ├── css/style.css    # Complete stylesheet
-│   │   └── javascript/app.js # Frontend interactivity
-│   ├── templates/           # Jinja2 templates
+│   │   ├── css/style.css        # 38KB glassmorphism stylesheet
+│   │   └── javascript/app.js    # Sidebar, search, theme, notifications
+│   ├── templates/               # 11 Jinja2 templates
+│   │   ├── base.html            # Layout with sidebar, topbar, notifications
+│   │   ├── login.html           # Auth page
+│   │   ├── dashboard.html       # Main dashboard with Chart.js
+│   │   ├── users.html           # User list with filters
+│   │   ├── user_form.html       # Add/edit user
+│   │   ├── products.html        # Product list
+│   │   ├── product_form.html    # Add/edit product
+│   │   ├── reports.html         # Report cards + preview
+│   │   ├── settings.html        # Password, theme, notifications
+│   │   ├── profile.html         # Avatar, bio
+│   │   └── ai_assistant.html    # Insights, summary, trends, chatbot
+│   ├── uploads/                 # User uploaded images
 │   └── utilities/
-│       ├── helpers.py       # Utility functions
-│       ├── decorators.py    # Route decorators
-│       └── ai_helpers.py    # AI assistant module
-├── run.py                   # Application entry point
-├── requirements.txt         # Python dependencies
-├── Dockerfile               # Docker build
-├── docker-compose.yml       # Docker Compose
-├── Procfile                 # Heroku/Railway deploy
-└── .env.example             # Environment variables
+│       ├── helpers.py           # File upload, pagination
+│       ├── decorators.py        # login_required, admin_only, handle_errors
+│       └── ai_helpers.py        # AIAssistant class (OpenAI-ready)
+├── docs/                        # GitHub Pages static site
+│   ├── index.html               # Landing page
+│   ├── dashboard.html           # Static dashboard demo
+│   └── login.html               # Static login demo
+├── .github/workflows/
+│   └── pages.yml                # GitHub Actions → GitHub Pages deploy
+├── database/                    # SQLite DB (auto-created)
+├── run.py                       # Entry point
+├── requirements.txt             # Python dependencies
+├── Dockerfile                   # Docker build
+├── docker-compose.yml           # Docker Compose
+├── Procfile                     # Gunicorn (Render/Railway)
+├── .env.example                 # Environment variables template
+├── .gitignore
+├── README.md
+├── LICENSE                      # MIT
+├── CONTRIBUTING.md
+└── CHANGELOG.md
 ```
 
 ---
 
 ## Quick Start
 
-### 1. Clone and Install
+### Prerequisites
+- Python 3.8+
+- pip
+
+### 1. Clone
 
 ```bash
-git clone https://github.com/yourusername/admin-dashboard.git
-cd admin-dashboard
+git clone https://github.com/sers457/AI-Python-Admin-Dashboard.git
+cd AI-Python-Admin-Dashboard
+```
+
+### 2. Install
+
+```bash
 pip install -r requirements.txt
 ```
 
-### 2. Run
+### 3. Run
 
 ```bash
 python run.py
 ```
 
 The app will:
-- Create the SQLite database automatically
-- Seed it with realistic sample data
-- Start on `http://localhost:5000`
+- Create the SQLite database automatically at `database/admin.db`
+- Seed it with realistic sample data (13 users, 12 products, 12 transactions)
+- Start on **http://localhost:5000**
 
-### 3. Login
+### 4. Login
 
 | Username | Password | Role |
 |----------|----------|------|
 | `admin` | `admin123` | Admin |
+
+---
+
+## GitHub Pages (Static Demo)
+
+A static UI demo is live at:
+
+**https://sers457.github.io/AI-Python-Admin-Dashboard/**
+
+| Page | Description |
+|------|-------------|
+| `/` | Landing page with project overview |
+| `/dashboard.html` | Interactive dashboard with Chart.js |
+| `/login.html` | Login page showcase |
+
+The static site is built from the `docs/` folder and auto-deploys via GitHub Actions on every push to `master`.
 
 ---
 
@@ -153,73 +211,93 @@ docker-compose up -d
 
 ### Render
 
-1. Connect your GitHub repository
-2. Set build command: `pip install -r requirements.txt`
-3. Set start command: `gunicorn run:app --bind 0.0.0.0:$PORT`
-4. Add environment variable: `SECRET_KEY`
+1. Connect `https://github.com/sers457/AI-Python-Admin-Dashboard`
+2. **Build:** `pip install -r requirements.txt`
+3. **Start:** `gunicorn run:app --bind 0.0.0.0:$PORT`
+4. Add env: `SECRET_KEY`
 
 ### Railway
 
-1. Connect GitHub repository
-2. Railway auto-detects `Procfile`
-3. Add `SECRET_KEY` environment variable
+1. Connect GitHub repo — Railway auto-detects `Procfile`
+2. Add env: `SECRET_KEY`
 
 ### PythonAnywhere
 
-1. Upload files via Git or manual upload
-2. Create a web app with manual configuration
-3. Set WSGI file to point to `run.py`
-4. Install dependencies in virtualenv
+1. Clone repo or upload files
+2. Create manual web app
+3. Set WSGI to `run.py`
+4. Install deps in virtualenv
 
-### Ubuntu VPS (Gunicorn + Nginx)
+### Ubuntu VPS
 
 ```bash
-# Install dependencies
 pip install -r requirements.txt gunicorn
-
-# Run with Gunicorn
 gunicorn run:app --bind 0.0.0.0:8000 --workers 4
-
 # Configure Nginx as reverse proxy
-# See: https://flask.palletsprojects.com/en/stable/deploying/
 ```
 
 ---
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `SECRET_KEY` | Flask secret key | `dev-secret-key...` |
-| `DATABASE_URL` | Database connection string | `sqlite:///database/admin.db` |
-| `FLASK_DEBUG` | Debug mode (1 or 0) | `1` |
-| `PORT` | Application port | `5000` |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SECRET_KEY` | `dev-secret-key-change-in-production` | Flask signing key |
+| `DATABASE_URL` | `sqlite:///database/admin.db` | Database URI |
+| `FLASK_DEBUG` | `1` | Debug mode |
+| `PORT` | `5000` | Server port |
 
-Duplicate `.env.example` to `.env` and customize.
+Copy `.env.example` → `.env` and customize for production.
 
 ---
 
-## Git Setup
+## Git Commands (Manual Setup)
 
 ```bash
 git init
 git add .
 git commit -m "Initial commit: AI-powered admin dashboard"
-git remote add origin https://github.com/yourusername/admin-dashboard.git
-git push -u origin main
+git remote add origin https://github.com/sers457/AI-Python-Admin-Dashboard.git
+git push -u origin master
+```
+
+---
+
+## Connecting to OpenAI
+
+The AI module (`app/utilities/ai_helpers.py`) is designed to be OpenAI-ready.
+Replace the `_call_llm` method:
+
+```python
+import openai
+
+@staticmethod
+def _call_llm(prompt):
+    openai.api_key = os.environ.get('OPENAI_API_KEY')
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response.choices[0].message.content
 ```
 
 ---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file.
+MIT License — see [LICENSE](LICENSE).
 
 ---
 
-## Screenshots
+## Contributing
 
-> Screenshots will be added in a future update.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
