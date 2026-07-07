@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdminPro - AI-Powered Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .bg {
+            position: fixed; inset: 0;
+            background: linear-gradient(135deg, #0a0a1a 0%, #12122a 50%, #1a1a3e 100%);
+            z-index: 0;
+        }
+        .sphere {
+            position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3;
+            animation: float 8s ease-in-out infinite;
+        }
+        .s1 { width: 400px; height: 400px; background: #6c5ce7; top: -100px; right: -100px; }
+        .s2 { width: 350px; height: 350px; background: #00b894; bottom: -80px; left: -80px; animation-delay: -3s; }
+        .s3 { width: 300px; height: 300px; background: #74b9ff; top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: -5s; }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        .container {
+            position: relative; z-index: 1; text-align: center; padding: 40px 20px;
+        }
+        .logo-icon {
+            width: 80px; height: 80px; border-radius: 20px;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 24px; font-size: 36px; color: #fff;
+            box-shadow: 0 8px 32px rgba(108, 92, 231, 0.3);
+            animation: logo-float 3s ease-in-out infinite;
+        }
+        @keyframes logo-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        h1 { font-size: 48px; font-weight: 800; margin-bottom: 12px; letter-spacing: -1px; }
+        .gradient-text {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        p { font-size: 18px; color: #a0aec0; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6; }
+        .buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 14px 32px; border-radius: 12px; font-size: 16px; font-weight: 600;
+            text-decoration: none; transition: all 0.3s; font-family: 'Inter', sans-serif;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: #fff;
+            box-shadow: 0 4px 20px rgba(108, 92, 231, 0.4);
+        }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(108, 92, 231, 0.5); }
+        .btn-glass {
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+            color: #fff; backdrop-filter: blur(10px);
+        }
+        .btn-glass:hover { background: rgba(255,255,255,0.1); transform: translateY(-3px); }
+        .features {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px; max-width: 700px; margin: 40px auto 0;
+        }
+        .feature {
+            padding: 16px; background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;
+            font-size: 13px; color: #a0aec0;
+        }
+        .feature i { color: #6c5ce7; margin-right: 6px; }
+        .footer-text { margin-top: 40px; font-size: 13px; color: #6b7280; }
+    </style>
+</head>
+<body>
+    <div class="bg">
+        <div class="sphere s1"></div>
+        <div class="sphere s2"></div>
+        <div class="sphere s3"></div>
+    </div>
+    <div class="container">
+        <div class="logo-icon"><i class="fas fa-cube"></i></div>
+        <h1><span class="gradient-text">AdminPro</span> Dashboard</h1>
+        <p>AI-powered admin dashboard built with Python &amp; Flask.<br>Premium glassmorphism UI with dark/light mode.</p>
+        <div class="buttons">
+            <a href="dashboard.html" class="btn btn-primary"><i class="fas fa-th-large"></i> Live Demo</a>
+            <a href="login.html" class="btn btn-glass"><i class="fas fa-sign-in-alt"></i> Login Page</a>
+            <a href="https://github.com/sers457/admin-dashboard" class="btn btn-glass"><i class="fab fa-github"></i> Source Code</a>
+        </div>
+        <div class="features">
+            <div class="feature"><i class="fas fa-shield-alt"></i> Auth</div>
+            <div class="feature"><i class="fas fa-users"></i> Users</div>
+            <div class="feature"><i class="fas fa-box"></i> Products</div>
+            <div class="feature"><i class="fas fa-chart-bar"></i> Reports</div>
+            <div class="feature"><i class="fas fa-robot"></i> AI Insights</div>
+            <div class="feature"><i class="fas fa-moon"></i> Dark Mode</div>
+        </div>
+        <p class="footer-text">
+            Flask full version: <code style="background:rgba(255,255,255,0.06);padding:4px 8px;border-radius:6px;font-size:12px;">pip install -r requirements.txt && python run.py</code>
+        </p>
+    </div>
+</body>
+</html>

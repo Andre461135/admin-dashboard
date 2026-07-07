@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - AdminPro Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a1a; color: #fff;
+            min-height: 100vh; display: flex;
+            align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .bg { position: fixed; inset: 0; background: linear-gradient(135deg, #0a0a1a 0%, #12122a 50%, #1a1a3e 100%); z-index: 0; }
+        .sphere { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3; animation: float 8s ease-in-out infinite; }
+        .s1 { width: 400px; height: 400px; background: #6c5ce7; top: -100px; right: -100px; }
+        .s2 { width: 350px; height: 350px; background: #00b894; bottom: -80px; left: -80px; animation-delay: -3s; }
+        .s3 { width: 300px; height: 300px; background: #74b9ff; top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: -5s; }
+        @keyframes float { 0%, 100% { transform: translate(0, 0) scale(1); } 33% { transform: translate(30px, -30px) scale(1.1); } 66% { transform: translate(-20px, 20px) scale(0.9); } }
+        .container { position: relative; z-index: 1; width: 100%; max-width: 420px; padding: 20px; }
+        .card {
+            background: rgba(255,255,255,0.05); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
+            padding: 40px 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .header { text-align: center; margin-bottom: 32px; }
+        .logo {
+            width: 64px; height: 64px; border-radius: 18px;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px; font-size: 28px; color: #fff;
+            box-shadow: 0 8px 25px rgba(108,92,231,0.3);
+        }
+        .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+        .header p { font-size: 14px; color: rgba(255,255,255,0.5); }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block; font-size: 12px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.5px; color: rgba(255,255,255,0.4); margin-bottom: 8px;
+        }
+        .form-group label i { margin-right: 6px; }
+        .form-group input {
+            width: 100%; padding: 12px 16px; border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.06); color: #fff;
+            font-size: 14px; font-family: 'Inter', sans-serif; outline: none;
+            transition: all 0.3s;
+        }
+        .form-group input:focus { border-color: #6c5ce7; box-shadow: 0 0 0 3px rgba(108,92,231,0.2); }
+        .options { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: rgba(255,255,255,0.6); }
+        .checkbox-label input { display: none; }
+        .checkmark {
+            width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 4px; display: inline-flex; align-items: center;
+            justify-content: center; transition: all 0.2s;
+        }
+        .checkbox-label input:checked + .checkmark { background: #6c5ce7; border-color: #6c5ce7; }
+        .checkbox-label input:checked + .checkmark::after { content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; font-size: 10px; color: #fff; }
+        .forgot { font-size: 13px; color: #6c5ce7; font-weight: 500; text-decoration: none; }
+        .btn {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; padding: 12px; border-radius: 12px;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: #fff;
+            border: none; font-size: 15px; font-weight: 600; font-family: 'Inter', sans-serif;
+            cursor: pointer; transition: all 0.3s; text-decoration: none;
+            box-shadow: 0 4px 15px rgba(108,92,231,0.3);
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(108,92,231,0.4); }
+        .footer { text-align: center; margin-top: 24px; font-size: 13px; color: rgba(255,255,255,0.4); }
+        .footer a { color: #6c5ce7; text-decoration: none; font-weight: 500; }
+        .note { text-align: center; margin-top: 16px; font-size: 13px; color: rgba(255,255,255,0.3); }
+        .note code { background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="bg">
+        <div class="sphere s1"></div>
+        <div class="sphere s2"></div>
+        <div class="sphere s3"></div>
+    </div>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="logo"><i class="fas fa-cube"></i></div>
+                <h1>Welcome Back</h1>
+                <p>Sign in to your admin dashboard</p>
+            </div>
+            <form onsubmit="alert('This is a static demo. Run the Flask app for full functionality.'); return false;">
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Username or Email</label>
+                    <input type="text" placeholder="Enter your username" value="admin" disabled style="opacity:0.7;">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" placeholder="Enter your password" value="admin123" disabled style="opacity:0.7;">
+                </div>
+                <div class="options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" checked disabled>
+                        <span class="checkmark"></span>
+                        Remember me
+                    </label>
+                    <a href="#" class="forgot" onclick="alert('Static demo. Run Flask app for features.'); return false;">Forgot Password?</a>
+                </div>
+                <button type="submit" class="btn"><span>Sign In</span> <i class="fas fa-arrow-right"></i></button>
+            </form>
+            <div class="note">Demo: <code>admin</code> / <code>admin123</code></div>
+            <div class="footer"><a href="index.html"><i class="fas fa-arrow-left"></i> Back to Home</a></div>
+        </div>
+    </div>
+</body>
+</html>
