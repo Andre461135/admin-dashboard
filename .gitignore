@@ -1,18 +1,35 @@
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
 dist/
 build/
-.env
+*.egg
+.venv/
+venv/
+env/
+
+# Flask
+instance/
 *.db
-*.sqlite
-app/uploads/*
-!app/uploads/.gitkeep
-*.pyc
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
 Thumbs.db
-venv/
-.venv/
-env/
+
+# Uploads
+app/static/uploads/*
+!app/static/uploads/default.png
+
+# Logs
 *.log
-instance/
