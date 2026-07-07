@@ -1,14 +1,14 @@
 version: '3.8'
 
 services:
-  admin-dashboard:
+  web:
     build: .
     ports:
       - "5000:5000"
     environment:
-      - SECRET_KEY=change-this-to-a-random-secret-key
-      - FLASK_DEBUG=0
+      - SECRET_KEY=change-this-in-production
+      - FLASK_ENV=production
     volumes:
-      - ./database:/app/database
-      - ./app/uploads:/app/app/uploads
+      - ./app/database:/app/app/database
+      - ./app/static/uploads:/app/app/static/uploads
     restart: unless-stopped

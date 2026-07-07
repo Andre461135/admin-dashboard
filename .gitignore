@@ -33,3 +33,12 @@ app/static/uploads/*
 
 # Logs
 *.log
+
+# Database
+app/database/*.db
+*.db
+
+# Python cache
+__pycache__/
+*.pyc
+

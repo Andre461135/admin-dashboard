@@ -1,8 +1,10 @@
 import os
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_required, current_user
-from app.models.models import db, User, Activity
-from app.utilities.helpers import save_file, paginate
+from app import db
+from app.models import User, Activity
+from app.forms import UserForm
+from app.utils import save_file, log_activity
 
 users_bp = Blueprint('users', __name__)
 
@@ -10,157 +12,124 @@ users_bp = Blueprint('users', __name__)
 @users_bp.route('/')
 @login_required
 def list_users():
+    if not current_user.is_admin():
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('dashboard.index'))
+
     page = request.args.get('page', 1, type=int)
-    search = request.args.get('search', '').strip()
-    role_filter = request.args.get('role', '').strip()
-    status_filter = request.args.get('status', '').strip()
+    search = request.args.get('search', '')
 
     query = User.query
     if search:
         query = query.filter(
-            db.or_(User.username.ilike(f'%{search}%'), User.email.ilike(f'%{search}%'))
+            User.full_name.contains(search) |
+            User.email.contains(search) |
+            User.username.contains(search)
         )
-    if role_filter:
-        query = query.filter_by(role=role_filter)
-    if status_filter:
-        query = query.filter_by(status=status_filter)
 
     query = query.order_by(User.created_at.desc())
-    result = paginate(query, page, per_page=10)
+    users = query.paginate(page=page, per_page=10, error_out=False)
 
-    return render_template('users.html',
-                           users=result['items'],
-                           page=result['page'],
-                           total_pages=result['total_pages'],
-                           total=result['total'],
-                           search=search,
-                           role_filter=role_filter,
-                           status_filter=status_filter)
+    return render_template('users/list.html', users=users, search=search)
 
 
 @users_bp.route('/add', methods=['GET', 'POST'])
 @login_required
 def add_user():
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
-        role = request.form.get('role', 'user')
-        status = request.form.get('status', 'active')
-        bio = request.form.get('bio', '').strip()
+    if not current_user.is_admin():
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('dashboard.index'))
 
-        if not username or not email or not password:
-            flash('Username, email, and password are required.', 'danger')
-            return render_template('user_form.html', user=None)
+    form = UserForm()
+    if form.validate_on_submit():
+        if User.query.filter_by(email=form.email.data.lower().strip()).first():
+            flash('Email already registered.', 'danger')
+            return render_template('users/form.html', form=form, title='Add User')
 
-        if User.query.filter_by(username=username).first():
-            flash('Username already exists.', 'danger')
-            return render_template('user_form.html', user=None)
+        if User.query.filter_by(username=form.username.data.strip()).first():
+            flash('Username already taken.', 'danger')
+            return render_template('users/form.html', form=form, title='Add User')
 
-        if User.query.filter_by(email=email).first():
-            flash('Email already exists.', 'danger')
-            return render_template('user_form.html', user=None)
+        user = User(
+            username=form.username.data.strip(),
+            email=form.email.data.lower().strip(),
+            full_name=form.full_name.data.strip(),
+            role=form.role.data,
+            status=form.status.data,
+            bio=form.bio.data,
+            phone=form.phone.data
+        )
+        user.set_password(form.password.data or 'changeme123')
 
-        user = User(username=username, email=email, role=role, status=status, bio=bio)
-        user.set_password(password)
-
-        if 'profile_image' in request.files:
-            file = request.files['profile_image']
-            if file.filename:
-                filename = save_file(file)
-                if filename:
-                    user.profile_image = filename
+        if form.profile_image.data:
+            filename = save_file(form.profile_image.data, current_app.config['UPLOAD_FOLDER'])
+            if filename:
+                user.profile_image = filename
 
         db.session.add(user)
-        activity = Activity(user_id=current_user.id, action='User added',
-                            details=f'Added user {username}')
-        db.session.add(activity)
         db.session.commit()
-
-        flash(f'User {username} created successfully!', 'success')
+        log_activity(current_user.id, 'User created', f'Created user: {user.full_name}', 'user', user.id)
+        flash('User created successfully!', 'success')
         return redirect(url_for('users.list_users'))
 
-    return render_template('user_form.html', user=None)
+    return render_template('users/form.html', form=form, title='Add User')
 
 
 @users_bp.route('/edit/<int:user_id>', methods=['GET', 'POST'])
 @login_required
 def edit_user(user_id):
-    user = db.session.get(User, user_id)
-    if not user:
-        flash('User not found.', 'danger')
-        return redirect(url_for('users.list_users'))
+    if not current_user.is_admin():
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('dashboard.index'))
 
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip()
-        role = request.form.get('role', 'user')
-        status = request.form.get('status', 'active')
-        bio = request.form.get('bio', '').strip()
+    user = User.query.get_or_404(user_id)
+    form = UserForm(obj=user)
 
-        if not username or not email:
-            flash('Username and email are required.', 'danger')
-            return render_template('user_form.html', user=user)
+    if form.validate_on_submit():
+        if form.email.data.lower().strip() != user.email:
+            if User.query.filter_by(email=form.email.data.lower().strip()).first():
+                flash('Email already registered.', 'danger')
+                return render_template('users/form.html', form=form, title='Edit User', user=user)
 
-        existing = User.query.filter(User.username == username, User.id != user_id).first()
-        if existing:
-            flash('Username already taken.', 'danger')
-            return render_template('user_form.html', user=user)
+        user.full_name = form.full_name.data.strip()
+        user.email = form.email.data.lower().strip()
+        user.role = form.role.data
+        user.status = form.status.data
+        user.bio = form.bio.data
+        user.phone = form.phone.data
 
-        existing = User.query.filter(User.email == email, User.id != user_id).first()
-        if existing:
-            flash('Email already taken.', 'danger')
-            return render_template('user_form.html', user=user)
+        if form.password.data:
+            user.set_password(form.password.data)
 
-        user.username = username
-        user.email = email
-        user.role = role
-        user.status = status
-        user.bio = bio
+        if form.profile_image.data:
+            filename = save_file(form.profile_image.data, current_app.config['UPLOAD_FOLDER'])
+            if filename:
+                user.profile_image = filename
 
-        password = request.form.get('password', '')
-        if password:
-            user.set_password(password)
-
-        if 'profile_image' in request.files:
-            file = request.files['profile_image']
-            if file.filename:
-                filename = save_file(file)
-                if filename:
-                    if user.profile_image and user.profile_image != 'default.svg':
-                        old_path = os.path.join(current_app.config['UPLOAD_FOLDER'], user.profile_image)
-                        if os.path.exists(old_path):
-                            os.remove(old_path)
-                    user.profile_image = filename
-
-        activity = Activity(user_id=current_user.id, action='User updated',
-                            details=f'Updated user {username}')
-        db.session.add(activity)
         db.session.commit()
-
-        flash(f'User {username} updated successfully!', 'success')
+        log_activity(current_user.id, 'User updated', f'Updated user: {user.full_name}', 'user', user.id)
+        flash('User updated successfully!', 'success')
         return redirect(url_for('users.list_users'))
 
-    return render_template('user_form.html', user=user)
+    form.username.data = user.username
+    return render_template('users/form.html', form=form, title='Edit User', user=user)
 
 
 @users_bp.route('/delete/<int:user_id>', methods=['POST'])
 @login_required
 def delete_user(user_id):
-    user = db.session.get(User, user_id)
-    if not user:
-        flash('User not found.', 'danger')
-        return redirect(url_for('users.list_users'))
+    if not current_user.is_admin():
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('dashboard.index'))
 
+    user = User.query.get_or_404(user_id)
     if user.id == current_user.id:
-        flash('You cannot delete yourself.', 'danger')
+        flash('You cannot delete your own account.', 'danger')
         return redirect(url_for('users.list_users'))
 
+    name = user.full_name
     db.session.delete(user)
-    activity = Activity(user_id=current_user.id, action='User deleted',
-                        details=f'Deleted user {user.username}')
-    db.session.add(activity)
     db.session.commit()
-
-    flash(f'User {user.username} deleted successfully.', 'success')
+    log_activity(current_user.id, 'User deleted', f'Deleted user: {name}', 'user', user_id)
+    flash('User deleted successfully!', 'success')
     return redirect(url_for('users.list_users'))

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Users - Admin Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Users</h1>
+        <p class="page-subtitle">Manage platform users</p>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="{{ url_for('users.add_user') }}" class="btn btn-primary">+ Add User</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">All Users</div>
+        <div class="search-bar">
+            <form method="GET" action="{{ url_for('users.list_users') }}" class="search-input-group" style="margin:0;">
+                <span class="search-icon">🔍</span>
+                <input type="text" name="search" placeholder="Search users..." value="{{ search }}">
+            </form>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users.items %}
+                    <tr>
+                        <td>
+                            <div class="user-cell">
+                                {% if user.profile_image and user.profile_image != 'default.png' %}
+                                <img src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" class="avatar-sm">
+                                {% else %}
+                                <div class="avatar-sm-placeholder">{{ user.full_name[:1] }}</div>
+                                {% endif %}
+                                <div>
+                                    <div class="font-semibold">{{ user.full_name }}</div>
+                                    <div class="text-xs text-muted">@{{ user.username }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ user.email }}</td>
+                        <td><span class="badge badge-{{ 'primary' if user.role == 'admin' else 'info' if user.role == 'editor' else 'secondary' }}">{{ user.role }}</span></td>
+                        <td><span class="badge badge-{{ 'success' if user.status == 'active' else 'warning' if user.status == 'inactive' else 'danger' }}">{{ user.status }}</span></td>
+                        <td class="text-sm text-muted">{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '' }}</td>
+                        <td>
+                            <div style="display:flex;gap:4px;">
+                                <a href="{{ url_for('users.edit_user', user_id=user.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+                                {% if user.id != current_user.id %}
+                                <form method="POST" action="{{ url_for('users.delete_user', user_id=user.id) }}" style="display:inline;" onsubmit="return confirm('Delete this user?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if users.items|length == 0 %}
+                    <tr><td colspan="6" class="text-center text-muted" style="padding:40px;">No users found</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if users.pages > 1 %}
+        <div class="pagination">
+            {% if users.has_prev %}
+            <a href="{{ url_for('users.list_users', page=users.prev_num, search=search) }}" class="page-item">‹</a>
+            {% endif %}
+            {% for page_num in users.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if page_num %}
+                <a href="{{ url_for('users.list_users', page=page_num, search=search) }}" class="page-item {% if page_num == users.page %}active{% endif %}">{{ page_num }}</a>
+                {% else %}
+                <span class="page-item">…</span>
+                {% endif %}
+            {% endfor %}
+            {% if users.has_next %}
+            <a href="{{ url_for('users.list_users', page=users.next_num, search=search) }}" class="page-item">›</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

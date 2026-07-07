@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Admin Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Welcome back, {{ current_user.full_name }}! Here's what's happening.</p>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="{{ url_for('reports.index') }}" class="btn btn-secondary">📋 Reports</a>
+        <a href="{{ url_for('users.add_user') }}" class="btn btn-primary">+ Add User</a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue">👥</div>
+        <div class="stat-value">{{ total_users }}</div>
+        <div class="stat-label">Total Users</div>
+        <div class="stat-change up">↑ {{ active_users }} active</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon purple">📦</div>
+        <div class="stat-value">{{ total_products }}</div>
+        <div class="stat-label">Total Products</div>
+        <div class="stat-change {% if low_stock > 0 %}down{% else %}up{% endif %}">
+            {% if low_stock > 0 %}↓ {{ low_stock }} low stock{% else %}✓ In stock{% endif %}
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green">💰</div>
+        <div class="stat-value">${{ "{:,.0f}".format(total_revenue) }}</div>
+        <div class="stat-label">Total Revenue</div>
+        <div class="stat-change up">↑ {{ total_sales }} transactions</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon pink">📈</div>
+        <div class="stat-value">{{ total_sales }}</div>
+        <div class="stat-label">Total Sales</div>
+        <div class="stat-change {% if pending_sales > 0 %}down{% else %}up{% endif %}">
+            {% if pending_sales > 0 %}↓ {{ pending_sales }} pending{% else %}✓ Completed{% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="charts-grid">
+    <div class="chart-card">
+        <div class="chart-header">
+            <div class="chart-title">Revenue Overview</div>
+            <span class="text-muted text-sm">Monthly</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+    <div class="chart-card">
+        <div class="chart-header">
+            <div class="chart-title">Product Categories</div>
+            <span class="text-muted text-sm">Distribution</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="categoryChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="charts-grid">
+    <div class="chart-card">
+        <div class="chart-header">
+            <div class="chart-title">Sales Trend</div>
+            <span class="text-muted text-sm">Last 30 days</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </div>
+    <div class="card" style="overflow:hidden;">
+        <div class="card-header">
+            <div class="card-title">Task Progress</div>
+        </div>
+        <div class="card-body">
+            {% for task in task_progress %}
+            <div class="task-item">
+                <div class="task-info">
+                    <div class="task-name">{{ task.name }}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:{{ task.progress }}%;background:{{ task.color }};"></div>
+                    </div>
+                </div>
+                <div class="task-percent">{{ task.progress }}%</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="grid-2" style="margin-bottom:24px;">
+    <!-- Recent Activity -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Recent Activity</div>
+            <span class="text-muted text-sm">Live feed</span>
+        </div>
+        <div class="card-body">
+            <div class="activity-feed">
+                {% for activity in recent_activities %}
+                <div class="activity-item">
+                    <div class="activity-avatar">
+                        {% if activity.user.profile_image and activity.user.profile_image != 'default.png' %}
+                        <img src="{{ url_for('static', filename='uploads/' + activity.user.profile_image) }}" alt="">
+                        {% else %}
+                        <div class="activity-avatar-placeholder">{{ activity.user.full_name[:1] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-action">{{ activity.action }}</div>
+                        <div class="activity-details">{{ activity.details }}</div>
+                        <div class="activity-time">{{ activity.created_at.strftime('%Y-%m-%d %H:%M') if activity.created_at else '' }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Users -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Recent Users</div>
+            <a href="{{ url_for('users.list_users') }}" class="text-sm">View all</a>
+        </div>
+        <div class="card-body">
+            {% for user in recent_users %}
+            <div class="activity-item">
+                <div class="activity-avatar">
+                    {% if user.profile_image and user.profile_image != 'default.png' %}
+                    <img src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="">
+                    {% else %}
+                    <div class="activity-avatar-placeholder" style="background:var(--gradient-1);">{{ user.full_name[:1] }}</div>
+                    {% endif %}
+                </div>
+                <div class="activity-content">
+                    <div class="activity-action">{{ user.full_name }}</div>
+                    <div class="activity-details">{{ user.email }} · <span class="badge badge-{{ 'success' if user.status == 'active' else 'warning' }}">{{ user.status }}</span></div>
+                    <div class="activity-time">{{ user.role.title() }} · Joined {{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '' }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="grid-2" style="margin-bottom:24px;">
+    <!-- AI Insights -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">🤖 AI Insights</div>
+            <span class="text-muted text-sm">Automated analysis</span>
+        </div>
+        <div class="card-body">
+            {% if insights %}
+            {% for insight in insights %}
+            <div class="insight-card mb-3">
+                <div class="insight-type {{ insight.insight_type }}">{{ insight.insight_type | upper }}</div>
+                <div class="insight-title">{{ insight.title }}</div>
+                <div class="insight-content">{{ insight.content }}</div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center text-muted" style="padding:20px;">
+                <div style="font-size:36px;margin-bottom:8px;">🧠</div>
+                <p>AI insights will appear here once enough data is collected.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Recent Transactions</div>
+            <span class="text-muted text-sm">Latest sales</span>
+        </div>
+        <div class="card-body">
+            {% if recent_transactions %}
+            {% for sale in recent_transactions %}
+            <div class="activity-item">
+                <div class="activity-content">
+                    <div class="activity-action">{{ sale.product.name if sale.product else 'Unknown Product' }}</div>
+                    <div class="activity-details">by {{ sale.buyer.full_name if sale.buyer else 'Unknown' }} · Qty: {{ sale.quantity }}</div>
+                    <div class="activity-time">${{ "%.2f"|format(sale.total) }} · <span class="badge badge-{{ 'success' if sale.status == 'completed' else 'warning' }}">{{ sale.status }}</span></div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center text-muted" style="padding:20px;">
+                <div style="font-size:36px;margin-bottom:8px;">📭</div>
+                <p>No transactions yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- AI Assistant -->
+<div class="card mb-6">
+    <div class="card-header">
+        <div class="card-title">🤖 AI Assistant</div>
+        <span class="text-muted text-sm">Ask me anything about your data</span>
+    </div>
+    <div class="chat-container" id="chatMessages">
+        <div class="chat-message ai">
+            <div class="chat-avatar ai">AI</div>
+            <div class="chat-bubble">Hello! I'm your AI dashboard assistant. Ask me about users, sales, products, or trends!</div>
+        </div>
+    </div>
+    <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="Ask about users, sales, products..." autocomplete="off">
+        <button id="chatSend">Send</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}

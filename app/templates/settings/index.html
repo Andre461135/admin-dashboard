@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Settings - Admin Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Settings</h1>
+        <p class="page-subtitle">Manage your account settings</p>
+    </div>
+</div>
+
+<div class="grid-2">
+    <a href="{{ url_for('settings.profile') }}" class="report-card card-3d">
+        <div class="card-3d-inner">
+            <div class="report-icon">👤</div>
+            <h3>Profile</h3>
+            <p>Update your personal information and profile photo.</p>
+            <span class="btn btn-sm btn-primary">Edit Profile</span>
+        </div>
+    </a>
+    <a href="{{ url_for('settings.password') }}" class="report-card card-3d">
+        <div class="card-3d-inner">
+            <div class="report-icon">🔒</div>
+            <h3>Password</h3>
+            <p>Change your account password.</p>
+            <span class="btn btn-sm btn-primary">Change Password</span>
+        </div>
+    </a>
+    <a href="{{ url_for('settings.appearance') }}" class="report-card card-3d">
+        <div class="card-3d-inner">
+            <div class="report-icon">🎨</div>
+            <h3>Appearance</h3>
+            <p>Toggle between light and dark themes.</p>
+            <span class="btn btn-sm btn-primary">Customize</span>
+        </div>
+    </a>
+    <a href="{{ url_for('settings.notifications') }}" class="report-card card-3d">
+        <div class="card-3d-inner">
+            <div class="report-icon">🔔</div>
+            <h3>Notifications</h3>
+            <p>Manage your notification preferences.</p>
+            <span class="btn btn-sm btn-primary">Configure</span>
+        </div>
+    </a>
+</div>
+{% endblock %}

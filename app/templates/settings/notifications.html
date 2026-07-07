@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Notifications - Admin Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Notification Settings</h1>
+        <p class="page-subtitle">Manage your notification preferences</p>
+    </div>
+    <a href="{{ url_for('settings.index') }}" class="btn btn-secondary">← Settings</a>
+</div>
+
+<div class="card" style="max-width:600px;">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('settings.notifications') }}">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                <label class="form-label">Theme Preference</label>
+                {{ form.theme(class="form-control") }}
+            </div>
+            <div class="form-group" style="display:flex;align-items:center;gap:12px;">
+                {{ form.notifications_enabled() }}
+                <label for="{{ form.notifications_enabled.id }}">Enable push notifications</label>
+            </div>
+            <div class="form-group" style="display:flex;align-items:center;gap:12px;">
+                {{ form.email_notifications() }}
+                <label for="{{ form.email_notifications.id }}">Enable email notifications</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

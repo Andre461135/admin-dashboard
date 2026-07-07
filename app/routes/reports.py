@@ -1,180 +1,184 @@
 import csv
 import io
-from datetime import datetime
-from flask import Blueprint, render_template, request, Response, jsonify, flash, redirect, url_for
+from datetime import datetime, timezone
+from flask import Blueprint, render_template, request, Response, flash
 from flask_login import login_required, current_user
-from app.models.models import db, User, Product, Transaction, Report, Activity
-from app.utilities.ai_helpers import AIAssistant
-
-try:
-    from reportlab.lib import colors
-    from reportlab.lib.pagesizes import letter, landscape
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import inch
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    REPORTLAB_AVAILABLE = True
-except ImportError:
-    REPORTLAB_AVAILABLE = False
+from app import db
+from app.models import User, Product, Sale
+from app.utils import log_activity
+from sqlalchemy import func
 
 reports_bp = Blueprint('reports', __name__)
 
 
 @reports_bp.route('/')
 @login_required
-def reports():
-    return render_template('reports.html')
+def index():
+    return render_template('reports/index.html')
 
 
-@reports_bp.route('/data')
+@reports_bp.route('/users')
 @login_required
-def report_data():
-    report_type = request.args.get('type', 'users')
+def users_report():
+    users = User.query.order_by(User.created_at.desc()).all()
+    return render_template('reports/view.html',
+        title='Users Report',
+        headers=['ID', 'Username', 'Email', 'Full Name', 'Role', 'Status', 'Created'],
+        rows=[[u.id, u.username, u.email, u.full_name, u.role, u.status, u.created_at.strftime('%Y-%m-%d') if u.created_at else ''] for u in users],
+        report_type='users')
+
+
+@reports_bp.route('/sales')
+@login_required
+def sales_report():
+    sales = Sale.query.order_by(Sale.created_at.desc()).all()
+    return render_template('reports/view.html',
+        title='Sales Report',
+        headers=['ID', 'Product', 'Buyer', 'Quantity', 'Total', 'Status', 'Date'],
+        rows=[[s.id, s.product.name if s.product else 'N/A', s.buyer.full_name if s.buyer else 'N/A',
+               s.quantity, f'${s.total:.2f}', s.status, s.created_at.strftime('%Y-%m-%d') if s.created_at else ''] for s in sales],
+        report_type='sales')
+
+
+@reports_bp.route('/products')
+@login_required
+def products_report():
+    products = Product.query.order_by(Product.created_at.desc()).all()
+    return render_template('reports/view.html',
+        title='Products Report',
+        headers=['ID', 'Name', 'Category', 'Price', 'Stock', 'SKU', 'Status'],
+        rows=[[p.id, p.name, p.category, f'${p.price:.2f}', p.stock, p.sku, p.status] for p in products],
+        report_type='products')
+
+
+@reports_bp.route('/revenue')
+@login_required
+def revenue_report():
+    data = db.session.query(
+        func.strftime('%Y-%m', Sale.created_at).label('month'),
+        func.count(Sale.id).label('transactions'),
+        func.sum(Sale.total).label('revenue')
+    ).group_by('month').order_by('month').all()
+
+    headers = ['Month', 'Transactions', 'Revenue']
+    rows = [[d.month, d.transactions, f'${d.revenue:.2f}'] for d in data]
+    return render_template('reports/view.html',
+        title='Revenue Report', headers=headers, rows=rows, report_type='revenue')
+
+
+@reports_bp.route('/export/csv/<report_type>')
+@login_required
+def export_csv(report_type):
+    log_activity(current_user.id, 'Report exported', f'Exported {report_type} report as CSV', 'report')
 
     if report_type == 'users':
-        users = User.query.order_by(User.created_at.desc()).all()
-        data = [{'id': u.id, 'username': u.username, 'email': u.email, 'role': u.role,
-                 'status': u.status, 'created_at': u.created_at.strftime('%Y-%m-%d')} for u in users]
-        summary = AIAssistant.report_summary('users', data)
-        return jsonify({'data': data, 'summary': summary, 'type': 'users'})
-
-    if report_type == 'sales':
-        transactions = Transaction.query.order_by(Transaction.created_at.desc()).all()
-        data = [{'id': t.id, 'amount': t.amount, 'status': t.status,
-                 'created_at': t.created_at.strftime('%Y-%m-%d')} for t in transactions]
-        summary = AIAssistant.report_summary('sales', data)
-        return jsonify({'data': data, 'summary': summary, 'type': 'sales'})
-
-    if report_type == 'products':
-        products = Product.query.order_by(Product.created_at.desc()).all()
-        data = [{'id': p.id, 'name': p.name, 'category': p.category, 'price': p.price,
-                 'stock': p.stock, 'status': p.status} for p in products]
-        summary = AIAssistant.report_summary('products', data)
-        return jsonify({'data': data, 'summary': summary, 'type': 'products'})
-
-    if report_type == 'revenue':
-        transactions = Transaction.query.filter_by(status='completed').order_by(
-            Transaction.created_at.desc()
-        ).all()
-        data = [{'id': t.id, 'amount': t.amount, 'created_at': t.created_at.strftime('%Y-%m-%d')}
-                for t in transactions]
-        total = sum(t.amount for t in transactions)
-        summary = AIAssistant.report_summary('revenue', data)
-        return jsonify({'data': data, 'summary': summary, 'total': round(total, 2), 'type': 'revenue'})
-
-    return jsonify({'data': [], 'summary': 'No data available.'})
-
-
-@reports_bp.route('/export/csv')
-@login_required
-def export_csv():
-    report_type = request.args.get('type', 'users')
-    si = io.StringIO()
-    writer = csv.writer(si)
-
-    if report_type == 'users':
-        writer.writerow(['ID', 'Username', 'Email', 'Role', 'Status', 'Created At'])
-        for u in User.query.order_by(User.created_at.desc()).all():
-            writer.writerow([u.id, u.username, u.email, u.role, u.status, u.created_at.strftime('%Y-%m-%d')])
-        filename = f'users_report_{datetime.utcnow().strftime("%Y%m%d")}.csv'
-
+        data = User.query.all()
+        headers = ['ID', 'Username', 'Email', 'Full Name', 'Role', 'Status', 'Created']
+        rows = [[u.id, u.username, u.email, u.full_name, u.role, u.status,
+                 u.created_at.strftime('%Y-%m-%d') if u.created_at else ''] for u in data]
     elif report_type == 'sales':
-        writer.writerow(['ID', 'Amount', 'Status', 'Date'])
-        for t in Transaction.query.order_by(Transaction.created_at.desc()).all():
-            writer.writerow([t.id, t.amount, t.status, t.created_at.strftime('%Y-%m-%d')])
-        filename = f'sales_report_{datetime.utcnow().strftime("%Y%m%d")}.csv'
-
+        data = Sale.query.all()
+        headers = ['ID', 'Product', 'Buyer', 'Quantity', 'Total', 'Status', 'Date']
+        rows = [[s.id, s.product.name if s.product else 'N/A', s.buyer.full_name if s.buyer else 'N/A',
+                 s.quantity, s.total, s.status, s.created_at.strftime('%Y-%m-%d') if s.created_at else ''] for s in data]
     elif report_type == 'products':
-        writer.writerow(['ID', 'Name', 'Category', 'Price', 'Stock', 'Status'])
-        for p in Product.query.order_by(Product.created_at.desc()).all():
-            writer.writerow([p.id, p.name, p.category, p.price, p.stock, p.status])
-        filename = f'products_report_{datetime.utcnow().strftime("%Y%m%d")}.csv'
-
+        data = Product.query.all()
+        headers = ['ID', 'Name', 'Category', 'Price', 'Stock', 'SKU', 'Status']
+        rows = [[p.id, p.name, p.category, p.price, p.stock, p.sku, p.status] for p in data]
     elif report_type == 'revenue':
-        writer.writerow(['ID', 'Amount', 'Date'])
-        for t in Transaction.query.filter_by(status='completed').order_by(Transaction.created_at.desc()).all():
-            writer.writerow([t.id, t.amount, t.created_at.strftime('%Y-%m-%d')])
-        filename = f'revenue_report_{datetime.utcnow().strftime("%Y%m%d")}.csv'
-
+        data = db.session.query(
+            func.strftime('%Y-%m', Sale.created_at).label('month'),
+            func.count(Sale.id).label('transactions'),
+            func.sum(Sale.total).label('revenue')
+        ).group_by('month').order_by('month').all()
+        headers = ['Month', 'Transactions', 'Revenue']
+        rows = [[d.month, d.transactions, d.revenue] for d in data]
     else:
         flash('Invalid report type.', 'danger')
-        return redirect(url_for('reports.reports'))
+        return render_template('reports/index.html')
 
-    output = si.getvalue()
-    activity = Activity(user_id=current_user.id, action='Report exported',
-                        details=f'Exported {report_type} report as CSV')
-    db.session.add(activity)
-    db.session.commit()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(headers)
+    writer.writerows(rows)
 
     return Response(
-        output,
+        output.getvalue(),
         mimetype='text/csv',
-        headers={'Content-Disposition': f'attachment; filename={filename}'}
+        headers={'Content-Disposition': f'attachment;filename={report_type}_report.csv'}
     )
 
 
-@reports_bp.route('/export/pdf')
+@reports_bp.route('/export/pdf/<report_type>')
 @login_required
-def export_pdf():
-    if not REPORTLAB_AVAILABLE:
-        flash('PDF export requires reportlab. Install with: pip install reportlab', 'warning')
-        return redirect(url_for('reports.reports'))
+def export_pdf(report_type):
+    log_activity(current_user.id, 'Report exported', f'Exported {report_type} report as PDF', 'report')
 
-    report_type = request.args.get('type', 'users')
-    buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=landscape(letter), rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
-    styles = getSampleStyleSheet()
-    elements = []
-    elements.append(Paragraph(f'{report_type.capitalize()} Report', styles['Title']))
-    elements.append(Spacer(1, 12))
-    elements.append(Paragraph(f'Generated: {datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")}', styles['Normal']))
-    elements.append(Spacer(1, 20))
+    from reportlab.lib.pagesizes import letter, landscape
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.units import inch
+
+    buffer = io.BytesIO()
 
     if report_type == 'users':
-        data = [['ID', 'Username', 'Email', 'Role', 'Status', 'Created']]
-        for u in User.query.order_by(User.created_at.desc()).all():
-            data.append([str(u.id), u.username, u.email, u.role, u.status, u.created_at.strftime('%Y-%m-%d')])
+        data = User.query.all()
+        headers = ['ID', 'Username', 'Email', 'Full Name', 'Role', 'Status']
+        rows = [[u.id, u.username, u.email, u.full_name, u.role, u.status] for u in data]
     elif report_type == 'sales':
-        data = [['ID', 'Amount', 'Status', 'Date']]
-        for t in Transaction.query.order_by(Transaction.created_at.desc()).all():
-            data.append([str(t.id), f'${t.amount:.2f}', t.status, t.created_at.strftime('%Y-%m-%d')])
+        data = Sale.query.all()
+        headers = ['ID', 'Product', 'Buyer', 'Qty', 'Total', 'Status']
+        rows = [[s.id, s.product.name[:20] if s.product else 'N/A', s.buyer.full_name[:20] if s.buyer else 'N/A',
+                 s.quantity, f'${s.total:.2f}', s.status] for s in data]
     elif report_type == 'products':
-        data = [['ID', 'Name', 'Category', 'Price', 'Stock', 'Status']]
-        for p in Product.query.order_by(Product.created_at.desc()).all():
-            data.append([str(p.id), p.name, p.category, f'${p.price:.2f}', str(p.stock), p.status])
+        data = Product.query.all()
+        headers = ['ID', 'Name', 'Category', 'Price', 'Stock', 'Status']
+        rows = [[p.id, p.name[:25], p.category, f'${p.price:.2f}', p.stock, p.status] for p in data]
     elif report_type == 'revenue':
-        data = [['ID', 'Amount', 'Date']]
-        for t in Transaction.query.filter_by(status='completed').order_by(Transaction.created_at.desc()).all():
-            data.append([str(t.id), f'${t.amount:.2f}', t.created_at.strftime('%Y-%m-%d')])
+        data = db.session.query(
+            func.strftime('%Y-%m', Sale.created_at).label('month'),
+            func.count(Sale.id).label('transactions'),
+            func.sum(Sale.total).label('revenue')
+        ).group_by('month').order_by('month').all()
+        headers = ['Month', 'Transactions', 'Revenue']
+        rows = [[d.month, d.transactions, f'${d.revenue:.2f}'] for d in data]
     else:
         flash('Invalid report type.', 'danger')
-        return redirect(url_for('reports.reports'))
+        return render_template('reports/index.html')
 
-    table = Table(data, repeatRows=1)
-    style = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6c5ce7')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('FONTSIZE', (0, 0), (-1, 0), 11),
-        ('FONTSIZE', (0, 1), (-1, -1), 9),
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter))
+    elements = []
+    styles = getSampleStyleSheet()
+
+    title = f'{report_type.title()} Report'
+    elements.append(Paragraph(title, styles['Title']))
+    elements.append(Spacer(1, 0.25 * inch))
+    elements.append(Paragraph(f'Generated: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}', styles['Normal']))
+    elements.append(Spacer(1, 0.25 * inch))
+
+    table_data = [headers] + rows
+    table = Table(table_data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4361ee')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e0e0e0')),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#f8f9fa'), colors.white]),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-    ])
-    table.setStyle(style)
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('TOPPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f8f9fa')),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#dee2e6')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#ffffff'), colors.HexColor('#f1f3f5')]),
+    ]))
     elements.append(table)
-    doc.build(elements)
-    buf.seek(0)
 
-    activity = Activity(user_id=current_user.id, action='Report exported',
-                        details=f'Exported {report_type} report as PDF')
-    db.session.add(activity)
-    db.session.commit()
+    doc.build(elements)
+    buffer.seek(0)
 
     return Response(
-        buf.getvalue(),
+        buffer.getvalue(),
         mimetype='application/pdf',
-        headers={'Content-Disposition': f'attachment; filename={report_type}_report_{datetime.utcnow().strftime("%Y%m%d")}.pdf'}
+        headers={'Content-Disposition': f'attachment;filename={report_type}_report.pdf'}
     )

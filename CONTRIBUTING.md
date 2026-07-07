@@ -1,6 +1,6 @@
-# Contributing to Admin Dashboard
+# Contributing
 
-Thank you for considering contributing to this project!
+Thank you for your interest in contributing to this project!
 
 ## How to Contribute
 
@@ -12,12 +12,8 @@ Thank you for considering contributing to this project!
 
 ## Guidelines
 
-- Follow PEP 8 coding standards
-- Write clear commit messages
+- Follow PEP 8 style guide
+- Write clear, descriptive commit messages
 - Add comments for complex logic
-- Test your changes
-- Keep the code simple and modular
-
-## Report Issues
-
-Report issues at the GitHub Issues page with a clear description and steps to reproduce.
+- Test your changes before submitting
+- Keep pull requests focused on a single feature or fix

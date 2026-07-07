@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - Admin Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ title }}</h1>
+        <p class="page-subtitle">{% if user %}Editing: {{ user.full_name }}{% endif %}</p>
+    </div>
+    <a href="{{ url_for('users.list_users') }}" class="btn btn-secondary">← Back to Users</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    {{ form.username(class="form-control", placeholder="Username") }}
+                    {% for error in form.username.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    {{ form.full_name(class="form-control", placeholder="Full Name") }}
+                    {% for error in form.full_name.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    {{ form.email(class="form-control", placeholder="Email") }}
+                    {% for error in form.email.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    {{ form.phone(class="form-control", placeholder="Phone") }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    {{ form.role(class="form-control") }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    {{ form.status(class="form-control") }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password {% if user %}(leave blank to keep current){% endif %}</label>
+                    {{ form.password(class="form-control", placeholder="Password") }}
+                    {% for error in form.password.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Profile Image</label>
+                    {{ form.profile_image(class="form-control") }}
+                    {% if user and user.profile_image and user.profile_image != 'default.png' %}
+                    <div class="image-preview">
+                        <img src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Bio</label>
+                {{ form.bio(class="form-control", placeholder="Short biography", rows=3) }}
+            </div>
+            <div style="display:flex;gap:12px;margin-top:24px;">
+                <button type="submit" class="btn btn-primary">{% if user %}Update{% else %}Create{% endif %} User</button>
+                <a href="{{ url_for('users.list_users') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

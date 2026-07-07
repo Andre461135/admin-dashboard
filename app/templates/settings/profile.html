@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Profile - Admin Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Profile Settings</h1>
+        <p class="page-subtitle">Update your personal information</p>
+    </div>
+    <a href="{{ url_for('settings.index') }}" class="btn btn-secondary">← Settings</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('settings.profile') }}" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;">
+                {% if current_user.profile_image and current_user.profile_image != 'default.png' %}
+                <img src="{{ url_for('static', filename='uploads/' + current_user.profile_image) }}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;">
+                {% else %}
+                <div style="width:80px;height:80px;border-radius:50%;background:var(--gradient-1);color:white;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:600;">{{ current_user.full_name[:1] }}</div>
+                {% endif %}
+                <div>
+                    <h3>{{ current_user.full_name }}</h3>
+                    <p class="text-muted text-sm">{{ current_user.email }}</p>
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    {{ form.full_name(class="form-control") }}
+                    {% for error in form.full_name.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    {{ form.email(class="form-control") }}
+                    {% for error in form.email.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    {{ form.phone(class="form-control") }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Profile Image</label>
+                    {{ form.profile_image(class="form-control") }}
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Bio</label>
+                {{ form.bio(class="form-control", rows=3) }}
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

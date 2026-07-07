@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - Admin Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ title }}</h1>
+        <p class="page-subtitle">Detailed view with export options</p>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="{{ url_for('reports.export_csv', report_type=report_type) }}" class="btn btn-secondary">📥 CSV</a>
+        <a href="{{ url_for('reports.export_pdf', report_type=report_type) }}" class="btn btn-secondary">📥 PDF</a>
+        <a href="{{ url_for('reports.index') }}" class="btn btn-secondary">← All Reports</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Report Data</div>
+        <span class="text-muted text-sm">{{ rows|length }} records</span>
+    </div>
+    <div class="card-body">
+        {% if rows %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        {% for header in headers %}
+                        <th>{{ header }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        {% for cell in row %}
+                        <td>{{ cell }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <p>No data available for this report.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

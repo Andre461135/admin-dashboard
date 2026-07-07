@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Appearance - Admin Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Appearance</h1>
+        <p class="page-subtitle">Customize the dashboard theme</p>
+    </div>
+    <a href="{{ url_for('settings.index') }}" class="btn btn-secondary">← Settings</a>
+</div>
+
+<div class="card" style="max-width:600px;">
+    <div class="card-body">
+        <div class="mb-6">
+            <h3 class="mb-3">Theme Mode</h3>
+            <div class="theme-switch">
+                <button class="theme-btn {% if current_user.theme == 'light' %}active{% endif %}" data-theme="light" onclick="setTheme('light')">☀️ Light</button>
+                <button class="theme-btn {% if current_user.theme == 'dark' %}active{% endif %}" data-theme="dark" onclick="setTheme('dark')">🌙 Dark</button>
+            </div>
+        </div>
+
+        <div class="glass-widget mb-4">
+            <h4 class="mb-2">💡 Preview</h4>
+            <p class="text-muted text-sm">The theme change is applied immediately. Your preference is saved automatically.</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('settings.theme') }}" id="themeForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="theme" id="themeInput" value="{{ current_user.theme }}">
+        </form>
+
+        <div class="grid-2 mt-4">
+            <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:20px;border:2px solid var(--border-color);">
+                <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px;">CARD</div>
+                <div style="background:var(--bg-card);border-radius:8px;padding:16px;box-shadow:var(--shadow);">
+                    <div style="font-weight:600;margin-bottom:4px;">Sample Card</div>
+                    <div style="font-size:13px;color:var(--text-secondary);">This is how cards look in your theme.</div>
+                </div>
+            </div>
+            <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:20px;border:2px solid var(--border-color);">
+                <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px;">STATS</div>
+                <div class="stat-card" style="animation:none;">
+                    <div class="stat-icon blue">📊</div>
+                    <div class="stat-value">99%</div>
+                    <div class="stat-label">Uptime</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('dashboard-theme', theme);
+    document.querySelectorAll('.theme-btn').forEach(function(b) {
+        b.classList.toggle('active', b.getAttribute('data-theme') === theme);
+    });
+    document.getElementById('themeInput').value = theme;
+    fetch('/settings/theme', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: 'theme=' + theme
+    });
+}
+</script>
+{% endblock %}
